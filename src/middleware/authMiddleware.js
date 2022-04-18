@@ -35,8 +35,8 @@ const authorisation = function(req,res,next) {
     }
 
     let decodedToken=req.decodedToken//syntax need to write in reverse order
-    let authorloggedin = decodedToken.userId
-   if(userId!= authorloggedin ) {
+    let userloggedin = decodedToken.userId
+   if(userId!= userloggedin ) {
         return res.status(400).send({status:false, msg:"User is UnAuthorised"})
     }
     next()

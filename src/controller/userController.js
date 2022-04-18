@@ -1,5 +1,5 @@
-const userSchema = require('../model/user.model');
-const awsService = require('../service/aws.service');
+const UserModel = require('../model/userModel');
+const AwsService = require('../service/awsService');
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
@@ -7,6 +7,9 @@ const register = async (req, res) => {
     try {
         const data = req.body;
         const file = req.files;
+        if (Object.keys(data).length == 0) {
+            return res.status(400).send({status: false,message: 'Please Input Data'});
+        }
 
         const requiredFields = ['fname', 'lname', 'email', 'phone', 'password', 'address.shipping.street', 'address.shipping.city', 'address.shipping.pincode', 'address.billing.street', 'address.billing.city', 'address.billing.pincode'];
 
@@ -23,7 +26,7 @@ const register = async (req, res) => {
             return res.status(400).send({ status: false, message: 'Enter a valid Email Id' });
         }
 
-        let isDuplicateEmail = await userSchema.findOne({ email: data.email })
+        let isDuplicateEmail = await UserModel.findOne({ email: data.email })
         if (isDuplicateEmail) {
             return res.status(400).send({ status: false, msg: "email already exists" })
         }
@@ -33,7 +36,7 @@ const register = async (req, res) => {
             return res.status(400).send({ status: false, message: 'The mobile number must be 10 digits and should be only Indian number' });
         }
 
-        let duplicateMobile = await userSchema.findOne({ phone: data.phone })
+        let duplicateMobile = await UserModel.findOne({ phone: data.phone })
         if (duplicateMobile) {
             return res.status(400).send({ status: false, msg: "mobile number already exists" })
         }
@@ -47,7 +50,7 @@ const register = async (req, res) => {
             return res.status(400).send({ status: false, message: 'Enter the valid Pincode of address.billing.pincode' });
         }
 
-        if (!(data.password.length > 8 && data.password.length <= 15)) {
+        if ((data.password.length <8 && data.password.length >15)) {
             return res.status(400).send({status: false,message: 'Minimum password should be 8 and maximum will be 15'});
         }
 
@@ -55,13 +58,13 @@ const register = async (req, res) => {
             if (file[0].mimetype.indexOf('image') == -1) {
                 return res.status(400).send({ status: false, message: 'Only image files are allowed !' })
             }
-            const profile_url = await awsService.uploadFile(file[0]);
+            const profile_url = await AwsService.uploadFile(file[0]);
             data.profileImage = profile_url;
         }
         else {
             return res.status(400).send({ status: false, message: 'Profile Image is required !' })
         }
-        const dataRes = await userSchema.create(data);
+        const dataRes = await UserModel.create(data);
         return res.status(201).send({ status: true, message: "User created successfully", data: dataRes });
     } catch (err) {
         res.status(500).send({ status: false, error: err.message })
@@ -73,7 +76,8 @@ const login = async (req, res) => {
         const data = req.body;
         const { email, password } = data;
 
-        if (Object.keys(data).length == 0) {return res.status(400).send({status: false,message: 'Email and Password fields are required'});
+        if (Object.keys(data).length == 0) {
+            return res.status(400).send({status: false,message: 'Email and Password fields are required'});
         }
 
         if (email===undefined || email.trim() == '') {
@@ -88,7 +92,7 @@ const login = async (req, res) => {
             return res.status(400).send({ status: false, message: 'Enter a valid Email Id' });
         }
     
-        const userRes = await userSchema.findOne({ email: email});
+        const userRes = await UserModel.findOne({ email: email});
         if (!userRes) {
             return res.status(401).send({ status: false,message: 'Document does not exist with this email'});
         }
@@ -118,7 +122,7 @@ const login = async (req, res) => {
 const getUserProfile = async (req, res) => {
     try {
         const userId = req.params.userId;
-        const userRes = await userSchema.findById(userId);
+        const userRes = await UserModel.findById(userId);
        
         return res.status(200).send({status: true, message: 'User profile details', data: userRes});
 
@@ -134,6 +138,10 @@ const updateUserProfile = async (req, res) => {
         const data = req.body;
         const keys = Object.keys(data);
         const file = req.files;
+
+        if (Object.keys(data).length == 0) {
+            return res.status(400).send({status: false,message: 'Please Input Some Data'});
+        }
 
         for (let i = 0; i < keys.length; i++) {
             if (keys[i] == '_id') {
@@ -172,13 +180,13 @@ const updateUserProfile = async (req, res) => {
         }
           
         
-        let duplicateMobile = await userSchema.findOne({ phone: data.phone })
+        let duplicateMobile = await UserModel.findOne({ phone: data.phone })
         if (duplicateMobile) {
             return res.status(400).send({ status: false, msg: "mobile number already exists" })
         }
 
         
-        let isDuplicateEmail = await userSchema.findOne({ phone: data.phone })
+        let isDuplicateEmail = await UserModel.findOne({ email: data.email })
         if (isDuplicateEmail) {
             return res.status(400).send({ status: false, msg: "email already exists" })
         }
@@ -187,10 +195,10 @@ const updateUserProfile = async (req, res) => {
             if (file[0].mimetype.indexOf('image') == -1) {
                 return res.status(400).send({status:false,message:'Only image files are allowed !'});
             }
-            const profile_url = await awsService.uploadFile(file[0]);
+            const profile_url = await AwsService.uploadFile(file[0]);
             data.profileImage = profile_url;
         }
-        const updateRes = await userSchema.findByIdAndUpdate(userId, data, { new: true });
+        const updateRes = await UserModel.findByIdAndUpdate(userId, data, { new: true });
         return res.status(200).send({status: true,message: `${Object.keys(data).length} field has been updated successfully !`,data: updateRes});
     } catch (err) {
    return res.status(500).send({status: false,error: err.messag});

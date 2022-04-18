@@ -1,21 +1,31 @@
 const express = require('express');
 const router = express.Router();
 
-const userController = require('../controller/user.controller');
-const productController = require('../controller/product.controller');
+const UserController = require('../controller/userController');
+const ProductController = require('../controller/productController');
+const CartController = require('../controller/cartController');
+const AuthMiddleware = require('../middleware/authMiddleware');
+const OrderController = require('../controller/orderController');
 
-const authMiddleware = require('../middleware/auth.middleware');
+router.post('/register', UserController.register);
+router.post('/login', UserController.login);
+router.get('/user/:userId/profile', AuthMiddleware.authenticate, AuthMiddleware.authorisation, UserController.getUserProfile);
+router.put('/user/:userId/profile', AuthMiddleware.authenticate, AuthMiddleware.authorisation, UserController.updateUserProfile);
 
-router.post('/register', userController.register);
-router.post('/login', userController.login);
+router.post('/products', ProductController.createProduct);
+router.get('/products', ProductController.getProudcts); 
+router.get('/products/:productId', ProductController.getProductById);
+router.put('/products/:productId', ProductController.updateProductById);
+router.delete('/products/:productId', ProductController.deleteProductById);
 
-router.get('/user/:userId/profile', authMiddleware.authenticate, authMiddleware.authorisation, userController.getUserProfile);
-router.put('/user/:userId/profile', authMiddleware.authenticate, authMiddleware.authorisation, userController.updateUserProfile);
 
-router.post('/products', productController.createProduct);
-router.get('/products', productController.getProudcts); 
-router.get('/products/:productId', productController.getProductById);
-router.put('/products/:productId', productController.updateProductById);
-router.delete('/products/:productId', productController.deleteProductById);
+router.post('/users/:userId/cart',AuthMiddleware.authenticate, AuthMiddleware.authorisation, CartController.createCart);
+router.put('/users/:userId/cart', AuthMiddleware.authenticate, AuthMiddleware.authorisation, CartController.updateCart);
+router.get('/users/:userId/cart', AuthMiddleware.authenticate, AuthMiddleware.authorisation, CartController.getCart);
+router.delete('/users/:userId/cart', AuthMiddleware.authenticate, AuthMiddleware.authorisation, CartController.deleteCart);
+
+
+router.post('/users/:userId/orders', AuthMiddleware.authenticate, AuthMiddleware.authorisation, OrderController.createOrder);
+router.put('/users/:userId/orders', AuthMiddleware.authenticate, AuthMiddleware.authorisation, OrderController.updateOrder);
 
 module.exports = router; 
