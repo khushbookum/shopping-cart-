@@ -53,8 +53,11 @@ const register = async (req, res) => {
         if ((data.password.length <8 && data.password.length >15)) {
             return res.status(400).send({status: false,message: 'Minimum password should be 8 and maximum will be 15'});
         }
+           
+        data.password = bcrypt.hashSync(data.password, 10);
 
         if (file && file.length > 0) {
+            console.log(file)
             if (file[0].mimetype.indexOf('image') == -1) {
                 return res.status(400).send({ status: false, message: 'Only image files are allowed !' })
             }
@@ -97,6 +100,7 @@ const login = async (req, res) => {
             return res.status(401).send({ status: false,message: 'Document does not exist with this email'});
         }
         bcrypt.compare(password, userRes.password, (err,result) => {
+           
             if (result === true) {
                 const userID = userRes._id
             const payLoad = { userId: userID }
@@ -171,7 +175,7 @@ const updateUserProfile = async (req, res) => {
                     }
                 }
                 else if (keys[i] == 'password') {
-                    if (!(data.password.length > 8 && data.password.length <= 15)) {
+                    if (data.password.length < 8 && data.password.length >= 15) {
                         return res.status(400).send({status: false,message: 'Minimum password should be 8 and maximum will be 15'});
                     }
                     data.password = bcrypt.hashSync(data.password, 10);

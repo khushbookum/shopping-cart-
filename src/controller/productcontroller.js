@@ -35,7 +35,7 @@ const createProduct = async (req, res) => {
                 else if (keys[i] == 'availableSizes') {
                     const Enum1 = ["S", "XS", "M", "X", "L", "XXL", "XL"];
                     for (let j = 0; j < data['availableSizes'].length; j++) {
-                        if (!Enum1.includes(data.availableSizes[j])) {
+                        if (!Enum1.includes(data.availableSizes[j])) {//to ask why some time except dot and why not array
                             return res.status(400).send({ status: false, message: `availableSizes should be in enum" [${Enum1.join(", ")}]` });
                         }
 
@@ -43,15 +43,11 @@ const createProduct = async (req, res) => {
                 }
             }
         }
-        console.log(keys.length)
+       console.log(keys.length)
         const isTitleAlreadyUsed = await ProductModel.findOne({ title: data.title })
         if (isTitleAlreadyUsed) {
             return res.status(400).send({ status: false, message: "Title is already used" })
         }
-
-
-
-
 
         if (file && file.length > 0) {
             if (file[0].mimetype.indexOf('image') == -1) {
@@ -106,6 +102,7 @@ const getProudcts = async (req, res) => {
                     }
                 }
             }
+            console.log(queryData.title)
             if (data['priceGreaterThan'] && data['priceLessThan']) {
                 queryData.price = {
                     $gt: data.priceGreaterThan,

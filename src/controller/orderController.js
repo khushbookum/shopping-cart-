@@ -12,10 +12,13 @@ const createOrder = async (req, res) => {
         const { items } = data;
     
         let totalQuantity = 0;
-        items.forEach((productObj) => {
-            totalQuantity += productObj.quantity;
-        });
-        data.totalQuantity = totalQuantity;
+        for(let i=0;i<items.length;i++){
+            totalQuantity += items[i].quantity;
+        }
+        // items.forEach((productObj) => {
+        //     totalQuantity += productObj.quantity;
+        // });
+         data.totalQuantity = totalQuantity;
 
         const orderRes = await OrderModel.create(data);
         return res.status(201).send({status: true,message: "Order placed success",data: orderRes});
@@ -44,18 +47,18 @@ const updateOrder = async (req, res) => {
         if (!statusEnum.includes(data.status)) {
             return res.status(400).send({status: false,message: `Only these params are allowed on status ${statusEnum.join(", ")}`});
         }
-        if (data.status == "cancelled") {
-            if (!orderRes.cancellable) {
-                return res.status(400).send({status: false,message: 'You are not able to cancel your order'});
-            }
-        }
+        // if (data.status == "cancelled") {
+        //     if (orderRes.cancellable ===false) {
+        //         return res.status(400).send({status: false,message: 'You are not able to cancel your order'});
+        //     }
+        // }
         if (orderRes.status == 'completed') {
             return res.status(200).send({status: true,message: 'Order is already completed'});
         }
         if (orderRes.status == 'cancelled') {
             return res.status(200).send({status: true,message: 'Order is already cancelled'});
         }
-        const updateRes = await OrderModel.findByIdAndUpdate(data.orderId, {status: data.status},{new: true});
+        const updateRes = await OrderModel.findByIdAndUpdate(data.orderId, {status: data.status,cancellable:false},{new: true});
         return res.status(200).send({status: true,message: "status update success",data: updateRes});
     }
     catch (error) {

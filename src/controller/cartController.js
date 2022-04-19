@@ -65,11 +65,12 @@ const createCart = async (req, res) => {
                         quantity: fetchCart.items[i].quantity + (data.items.quantity || 1)
                     });
                 }
-                else {
-                    previousItems.push(fetchCart.items[i]);
-                }
+               else {
+                  previousItems.push(fetchCart.items[i]);
+               }
             }
-            if (status) {
+          
+            if (status===true) {
                 const dataRes = await CartModel.findOneAndUpdate({userId: data.userId},{items: previousItems,$inc: {totalPrice: + price * (data.items.quantity || 1)}},{new: true}).select({items: {_id: 0}});
 
                 return res.status(201).send({status: true,message: "success",data: dataRes});
@@ -107,11 +108,16 @@ const updateCart = async (req, res) => {
         const keys = Object.keys(data);
         const requiredParams = ['cartId', 'productId', 'removeProduct'];
 
+        if(Object.keys(data).length==0){
+            return res.status(400).send({status:false,message:"data is missing"})
+        }
+
         for (let i = 0; i < requiredParams.length; i++) {
-            if (!data[requiredParams[i]] && data[requiredParams[i]] == undefined) {
+            if ( data[requiredParams[i]] == undefined) {
                 return res.status(400).send({status: false,message: `${requiredParams[i]} field is required`});
             }
         }
+       
 
         for (let i = 0; i < keys.length; i++) {
             if (!requiredParams.includes(keys[i])) {
@@ -123,7 +129,8 @@ const updateCart = async (req, res) => {
                 }
             }
         }
-        if (data.removeProduct || data.removeProduct == 0) {
+   
+           if(data.removeProduct!=undefined){
             if (typeof data.removeProduct != "number") {
                 return res.status(400).send({status: false,message: 'Only number datatypes are allowed !'});
             }
@@ -148,13 +155,13 @@ const updateCart = async (req, res) => {
                             removePrice = productRes.price * cartRes.items[i].quantity;
                         }
                         else {
-                            // productStatus = false;
+    
                             previousItems.push(cartRes.items[i]);
-                            productPrice = cartRes.totalPrice;
+                            productPrice = cartRes.totalPrice;//ask
                         }
                     }
                     productPrice = cartRes.totalPrice - removePrice;
-                    if (!productStatus) {
+                    if (productStatus===false) {
                         return res.status(400).send({status: false,message: 'Product not found in the Cart!'});
                     }
                     const removeRes = await CartModel.findOneAndUpdate({productId: data.productId}, {totalPrice: productPrice,totalItems: previousItems.length,items: previousItems}, {new: true});
@@ -187,7 +194,7 @@ const updateCart = async (req, res) => {
                             previousItems.push(cartRes.items[i]);
                         }
                     }
-                    if (!productStatus) {
+                    if (productStatus===false) {
                         return res.status(400).send({status: false,message: 'Product not found in the Cart!'});
                     }
                     const reduceRes = await CartModel.findOneAndUpdate({productId: data.productId}, {totalPrice: productPrice,totalItems: previousItems.length,items: previousItems}, {new: true}).select({items: {_id: 0}});;
