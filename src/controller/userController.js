@@ -7,9 +7,6 @@ const register = async (req, res) => {
     try {
         const data = req.body;
         const file = req.files;
-        if (Object.keys(data).length == 0) {
-            return res.status(400).send({status: false,message: 'Please Input Data'});
-        }
 
         const requiredFields = ['fname', 'lname', 'email', 'phone', 'password', 'address.shipping.street', 'address.shipping.city', 'address.shipping.pincode', 'address.billing.street', 'address.billing.city', 'address.billing.pincode'];
 
@@ -50,14 +47,11 @@ const register = async (req, res) => {
             return res.status(400).send({ status: false, message: 'Enter the valid Pincode of address.billing.pincode' });
         }
 
-        if ((data.password.length <8 && data.password.length >15)) {
+        if (!(data.password.length > 8 && data.password.length <= 15)) {
             return res.status(400).send({status: false,message: 'Minimum password should be 8 and maximum will be 15'});
         }
-           
-        data.password = bcrypt.hashSync(data.password, 10);
 
         if (file && file.length > 0) {
-            console.log(file)
             if (file[0].mimetype.indexOf('image') == -1) {
                 return res.status(400).send({ status: false, message: 'Only image files are allowed !' })
             }
@@ -79,8 +73,7 @@ const login = async (req, res) => {
         const data = req.body;
         const { email, password } = data;
 
-        if (Object.keys(data).length == 0) {
-            return res.status(400).send({status: false,message: 'Email and Password fields are required'});
+        if (Object.keys(data).length == 0) {return res.status(400).send({status: false,message: 'Email and Password fields are required'});
         }
 
         if (email===undefined || email.trim() == '') {
@@ -100,7 +93,6 @@ const login = async (req, res) => {
             return res.status(401).send({ status: false,message: 'Document does not exist with this email'});
         }
         bcrypt.compare(password, userRes.password, (err,result) => {
-           
             if (result === true) {
                 const userID = userRes._id
             const payLoad = { userId: userID }
@@ -108,7 +100,7 @@ const login = async (req, res) => {
 
             // creating JWT
 
-            const token = jwt.sign(payLoad, secretKey, { expiresIn: "1hr" })
+            const token = jwt.sign(payLoad, secretKey, { expiresIn: "3hr" })
 
             res.header("Authorization", "bearer" + " " + token)
 
@@ -143,10 +135,6 @@ const updateUserProfile = async (req, res) => {
         const keys = Object.keys(data);
         const file = req.files;
 
-        if (Object.keys(data).length == 0) {
-            return res.status(400).send({status: false,message: 'Please Input Some Data'});
-        }
-
         for (let i = 0; i < keys.length; i++) {
             if (keys[i] == '_id') {
                 return res.status(400).send({status: false,message: 'You are not able to update _id property'
@@ -175,7 +163,7 @@ const updateUserProfile = async (req, res) => {
                     }
                 }
                 else if (keys[i] == 'password') {
-                    if (data.password.length < 8 && data.password.length >= 15) {
+                    if (!(data.password.length > 8 && data.password.length <= 15)) {
                         return res.status(400).send({status: false,message: 'Minimum password should be 8 and maximum will be 15'});
                     }
                     data.password = bcrypt.hashSync(data.password, 10);
@@ -190,7 +178,7 @@ const updateUserProfile = async (req, res) => {
         }
 
         
-        let isDuplicateEmail = await UserModel.findOne({ email: data.email })
+        let isDuplicateEmail = await UserModel.findOne({ phone: data.phone })
         if (isDuplicateEmail) {
             return res.status(400).send({ status: false, msg: "email already exists" })
         }
@@ -199,7 +187,7 @@ const updateUserProfile = async (req, res) => {
             if (file[0].mimetype.indexOf('image') == -1) {
                 return res.status(400).send({status:false,message:'Only image files are allowed !'});
             }
-            const profile_url = await AwsService.uploadFile(file[0]);
+            const profile_url = await AWS.uploadFile(file[0]);
             data.profileImage = profile_url;
         }
         const updateRes = await UserModel.findByIdAndUpdate(userId, data, { new: true });
