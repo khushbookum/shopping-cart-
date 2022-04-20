@@ -135,6 +135,10 @@ const updateUserProfile = async (req, res) => {
         const keys = Object.keys(data);
         const file = req.files;
 
+        if (Object.keys(data).length == 0) {
+            return res.status(400).send({status: false,message: 'Please Input Some Data'});
+        }
+
         for (let i = 0; i < keys.length; i++) {
             if (keys[i] == '_id') {
                 return res.status(400).send({status: false,message: 'You are not able to update _id property'
@@ -178,7 +182,7 @@ const updateUserProfile = async (req, res) => {
         }
 
         
-        let isDuplicateEmail = await UserModel.findOne({ phone: data.phone })
+        let isDuplicateEmail = await UserModel.findOne({ email: data.email })
         if (isDuplicateEmail) {
             return res.status(400).send({ status: false, msg: "email already exists" })
         }
@@ -187,7 +191,7 @@ const updateUserProfile = async (req, res) => {
             if (file[0].mimetype.indexOf('image') == -1) {
                 return res.status(400).send({status:false,message:'Only image files are allowed !'});
             }
-            const profile_url = await AWS.uploadFile(file[0]);
+            const profile_url = await AwsService.uploadFile(file[0]);
             data.profileImage = profile_url;
         }
         const updateRes = await UserModel.findByIdAndUpdate(userId, data, { new: true });
